@@ -68,10 +68,9 @@ import http.client
 import os
 import csv
 import json
-import dateutil.parser
 
 
-def main(file_path, delimiter, max_rows, elastic_index, json_struct, datetime_field, elastic_type, elastic_address, id_column):
+def main(file_path, delimiter, max_rows, elastic_index, json_struct, datetime_field, elastic_type, elastic_address, id_column, without_header):
     endpoint = '/_bulk'
     if max_rows is None:
       max_rows_disp = "all"
@@ -86,14 +85,24 @@ def main(file_path, delimiter, max_rows, elastic_index, json_struct, datetime_fi
     count = 0
     headers = []
     headers_position = {}
+
+    headers_new = []
+    headers_new_position = {}
+
+    if True == without_header:
+      for iterator, col in enumerate(json.loads(json_struct)):
+        headers.append(col)
+        headers_position[col] = iterator
+
     to_elastic_string = ""
     with open(file_path, 'r') as csvfile:
         reader = csv.reader(csvfile, delimiter=delimiter, quotechar='"')
         for row in reader:
-            if count == 0:
+            if count == 0 and len(headers) == 0:
                 for iterator, col in enumerate(row):
                     headers.append(col)
                     headers_position[col] = iterator
+                
             elif max_rows is not None and count >= max_rows:
                 print('Max rows imported - exit')
                 break
@@ -107,6 +116,7 @@ def main(file_path, delimiter, max_rows, elastic_index, json_struct, datetime_fi
                 else:
                     _data = json_struct.replace("'", '"')
                 _data = _data.replace('\n','').replace('\r','')
+
                 for header in headers:
                     if header == datetime_field:
                         datetime_type = dateutil.parser.parse(row[pos])
@@ -181,10 +191,15 @@ if __name__ == '__main__':
                         type=str,
                         default=";",
                         help='If you want to have a different delimiter than ;')
+    parser.add_argument('--file-without-header',
+                        default=False,
+                        help='If your csv file dont have a header',
+                        action="store_true")
 
     parsed_args = parser.parse_args()
 
     main(file_path=parsed_args.csv_file, delimiter = parsed_args.delimiter, json_struct=parsed_args.json_struct,
          elastic_index=parsed_args.elastic_index, elastic_type=parsed_args.elastic_type,
          datetime_field=parsed_args.datetime_field, max_rows=parsed_args.max_rows,
-         elastic_address=parsed_args.elastic_address, id_column=parsed_args.id_column)
+         elastic_address=parsed_args.elastic_address, id_column=parsed_args.id_column,
+         without_header=parsed_args.file_without_header)
