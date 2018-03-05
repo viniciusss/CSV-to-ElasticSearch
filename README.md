@@ -85,9 +85,10 @@ Required:
     ???
   --delimiter DELIMITER
     Delimiter to use in csv file (default is ';')
+  --file-without-header
+    Use the keys of json-struct
 ```
 
 ## Notes
-    - CSV must have headers
     - insert elastic address (with port) as argument, it defaults to localhost:9200
     - Bulk insert method is used, because inserting row by row is unbelievably slow
